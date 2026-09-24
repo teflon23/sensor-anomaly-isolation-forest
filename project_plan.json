@@ -1,0 +1,16 @@
+{
+  "slug": "sensor-anomaly-isolation-forest",
+  "title": "Multivariate Sensor Anomaly Detection via Isolation Forest",
+  "description": "Detects anomalies in synthetic 3-channel sensor time series using feature-engineered Isolation Forest versus a per-feature z-score threshold baseline on a chronological train/test split.",
+  "novelty": "Unlike the tool-router (text classification) and stream-windowing (event aggregation) projects, this is a batch time-series anomaly detection task requiring temporal feature engineering and a non-linear ensemble detector, validated on a strict chronological split to prevent future-into-past leakage.",
+  "method": "Algorithm: Engineer rolling mean (w=5), rolling std (w=5), and first-difference features from 3 raw sensor channels; train Isolation Forest (n_estimators=100, contamination='auto', random_state=seed) on chronological train (first 70%); set anomaly threshold at the 85th-percentile of training scores. Baseline: per-feature z-score with |z|>3 threshold, statistics computed only from the training segment. Validation: chronological 70/30 split (no shuffling, no overlap) to respect temporal ordering and prevent leakage. Metrics: precision, recall, F1 (all higher=better) evaluated on binary anomaly labels in the held-out test segment.",
+  "dependencies": [
+    "numpy",
+    "scikit-learn"
+  ],
+  "acceptance_tests": [
+    "test_dataset_contract: assert X.shape==(n_samples,3), y.shape==(n_samples,), y is binary {0,1}, different seeds yield different X, and n_samples<32 raises ValueError",
+    "test_algorithm_outperforms_baseline: with seed=42 and n_samples=256, run_experiment returns metrics['f1'] strictly greater than baseline_metrics['f1'], and all metric values are finite floats in [0,1]",
+    "test_determinism_and_split_size: two calls with identical arguments return identical JSON dicts, and with n_samples=256 the test set contains exactly 77 samples (last 30% of 256)"
+  ]
+}
